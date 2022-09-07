@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from gitlint.rules import LineRule, RuleViolation, CommitMessageTitle
 from gitlint.options import ListOption
 
@@ -21,8 +19,8 @@ that fits your needs.
 
 
 class SpecialChars(LineRule):
-    """ This rule will enforce that the commit message title does not contain any of the following characters:
-        $^%@!*() """
+    """This rule will enforce that the commit message title does not contain any of the following characters:
+    $^%@!*()"""
 
     # A rule MUST have a human friendly name
     name = "title-no-special-chars"
@@ -35,15 +33,20 @@ class SpecialChars(LineRule):
     target = CommitMessageTitle
 
     # A rule MAY have an option_spec if its behavior should be configurable.
-    options_spec = [ListOption('special-chars', ['$', '^', '%', '@', '!', '*', '(', ')'],
-                               "Comma separated list of characters that should not occur in the title")]
+    options_spec = [
+        ListOption(
+            "special-chars",
+            ["$", "^", "%", "@", "!", "*", "(", ")"],
+            "Comma separated list of characters that should not occur in the title",
+        )
+    ]
 
     def validate(self, line, _commit):
         self.log.debug("SpecialChars: This will be visible when running `gitlint --debug`")
 
         violations = []
         # options can be accessed by looking them up by their name in self.options
-        for char in self.options['special-chars'].value:
+        for char in self.options["special-chars"].value:
             if char in line:
                 msg = f"Title contains the special character '{char}'"
                 violation = RuleViolation(self.id, msg, line)

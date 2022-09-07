@@ -39,18 +39,25 @@ ignore=title-trailing-punctuation, T3
 # precedence over this
 verbosity = 2
 
-# By default gitlint will ignore merge, revert, fixup and squash commits.
+# By default gitlint will ignore merge, revert, fixup, fixup=amend, and squash commits.
 ignore-merge-commits=true
 ignore-revert-commits=true
 ignore-fixup-commits=true
+ignore-fixup-amend-commits=true
 ignore-squash-commits=true
 
-# Ignore any data send to gitlint via stdin
+# Ignore any data sent to gitlint via stdin
 ignore-stdin=true
 
 # Fetch additional meta-data from the local repository when manually passing a 
 # commit message to gitlint via stdin or --commit-msg. Disabled by default.
 staged=true
+
+# Hard fail when the target commit range is empty. Note that gitlint will
+# already fail by default on invalid commit ranges. This option is specifically
+# to tell gitlint to fail on *valid but empty* commit ranges.
+# Disabled by default.
+fail-without-commits=true
 
 # Enable debug mode (prints more output). Disabled by default.
 debug=true
@@ -102,7 +109,7 @@ ignore-merge-commits=false
 # This is useful for when developers often erroneously edit certain files or git submodules.
 # By specifying this rule, developers can only change the file when they explicitly
 # reference it in the commit message.
-files=gitlint/rules.py,README.md
+files=gitlint-core/gitlint/rules.py,README.md
 
 [body-match-regex]
 # python-style regex that the commit-msg body must match.
@@ -128,7 +135,7 @@ ignore=T1,body-min-length
 [ignore-by-body]
 # Ignore certain rules for commits of which the body has a line that matches a regex
 # E.g. Match bodies that have a line that that contain "release"
-# regex=(.*)release(.*)
+regex=(.*)release(.*)
 #
 # Ignore certain rules, you can reference them by their id or by their full name
 # Use 'all' to ignore all rules
@@ -138,6 +145,15 @@ ignore=T1,body-min-length
 # Ignore certain lines in a commit body that match a regex.
 # E.g. Ignore all lines that start with 'Co-Authored-By'
 regex=^Co-Authored-By
+
+[ignore-by-author-name]
+# Ignore certain rules for commits of which the author name matches a regex
+# E.g. Match commits made by dependabot
+regex=(.*)dependabot(.*)
+
+# Ignore certain rules, you can reference them by their id or by their full name
+# Use 'all' to ignore all rules
+ignore=T1,body-min-length
 
 # This is a contrib rule - a community contributed rule. These are disabled by default.
 # You need to explicitly enable them one-by-one by adding them to the "contrib" option
@@ -297,6 +313,20 @@ GITLINT_TARGET=/home/joe/myrepo/ gitlint     # using env variable
 [general]
 target=/home/joe/myrepo/
 ```
+### config
+
+Path where gitlint looks for a config file.
+
+Default value              |  gitlint version | commandline flag  | environment variable   
+---------------------------|------------------|-------------------|-----------------------
+`.gitlint`                 | >= 0.1.0         | `--config`        | `GITLINT_CONFIG`
+
+#### Examples
+```sh
+gitlint --config=/home/joe/gitlint.ini
+gitlint -C /home/joe/gitlint.ini      # different way of doing the same
+GITLINT_CONFIG=/home/joe/gitlint.ini  # using env variable
+```
 
 ### extra-path
 
@@ -361,6 +391,30 @@ GITLINT_STAGED=1 gitlint       # using env variable
 #.gitlint
 [general]
 staged=true
+```
+
+### fail-without-commits
+
+Hard fail when the target commit range is empty. Note that gitlint will
+already fail by default on invalid commit ranges. This option is specifically
+to tell gitlint to fail on **valid but empty** commit ranges.
+
+Default value  |  gitlint version | commandline flag  | environment variable   
+---------------|------------------|---------------------------|-----------------------
+ false         | >= 0.15.2        | `--fail-without-commits`  | `GITLINT_FAIL_WITHOUT_COMMITS`
+
+#### Examples
+```sh
+# CLI
+# The following will cause gitlint to hard fail (i.e. exit code > 0)
+# since HEAD..HEAD is a valid but empty commit range. 
+gitlint --fail-without-commits --commits HEAD..HEAD
+GITLINT_FAIL_WITHOUT_COMMITS=1 gitlint       # using env variable
+```
+```ini
+#.gitlint
+[general]
+fail-without-commits=true
 ```
 
 ### ignore-stdin
@@ -439,6 +493,25 @@ gitlint -c general.ignore-fixup-commits=false
 #.gitlint
 [general]
 ignore-fixup-commits=false
+```
+
+### ignore-fixup-amend-commits
+
+Whether or not to ignore [fixup=amend](https://git-scm.com/docs/git-commit#Documentation/git-commit.txt---fixupamendrewordltcommitgt) commits.
+
+Default value  |  gitlint version | commandline flag  | environment variable  
+---------------|------------------|-------------------|-----------------------
+ true          | >= 0.18.0        | Not Available     | Not Available  
+
+#### Examples
+```sh
+# CLI
+gitlint -c general.ignore-fixup-amend-commits=false
+```
+```ini
+#.gitlint
+[general]
+ignore-fixup-amend-commits=false
 ```
 
 ### ignore-squash-commits

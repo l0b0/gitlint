@@ -22,7 +22,7 @@ Great for use as a [commit-msg git hook](#using-gitlint-as-a-commit-msg-hook) or
  - **Easily integrated**: Gitlint is designed to work [with your own scripts or CI system](#using-gitlint-in-a-ci-environment).
  - **Sane defaults:** Many of gitlint's validations are based on
 [well-known](http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html),
-[community](http://addamhardy.com/2013/06/05/good-commit-messages-and-enforcing-them-with-git-hooks.html),
+[community](https://addamhardy.com/2013-06-05-good-commit-messages-and-enforcing-them-with-git-hooks),
 [standards](http://chris.beams.io/posts/git-commit/), others are based on checks that we've found
 useful throughout the years.
  - **Easily configurable:** Gitlint has sane defaults, but [you can also easily customize it to your own liking](configuration.md).
@@ -38,12 +38,15 @@ useful throughout the years.
 # Pip is recommended to install the latest version
 pip install gitlint
 
-# macOS
-brew install gitlint
-sudo port install gitlint  # alternative using macports
+# Alternative: by default, gitlint is installed with pinned dependencies. 
+# To install gitlint with looser dependency requirements, only install gitlint-core.
+pip install gitlint-core
 
-# Ubuntu
-apt-get install gitlint
+# Community maintained packages:
+brew install gitlint       # Homebrew (macOS)
+sudo port install gitlint  # Macports (macOS)
+apt-get install gitlint    # Ubuntu
+# Other package managers, see https://repology.org/project/gitlint/versions
 
 # Docker: https://hub.docker.com/r/jorisroovers/gitlint
 docker run --ulimit nofile=1024 -v $(pwd):/repo jorisroovers/gitlint
@@ -94,7 +97,7 @@ Short example `.gitlint` file ([full reference](configuration.md)):
 # their id or by their full name
 ignore=body-is-missing,T3
 
-# Ignore any data send to gitlint via stdin
+# Ignore any data sent to gitlint via stdin
 ignore-stdin=true
 
 # Configure title-max-length rule, set title length to 80 (72 = default)
@@ -134,9 +137,11 @@ Options:
                            current working directory]
   -C, --config FILE        Config file location [default: .gitlint]
   -c TEXT                  Config flags in format <rule>.<option>=<value>
-                           (e.g.: -c T1.line-length=80). Flag can be used
-                           multiple times to set multiple config values.
-  --commits TEXT           The range of commits to lint. [default: HEAD]
+                           (e.g.: -c T1.line-length=80). Flag can be
+                           used multiple times to set multiple config values.
+  --commit TEXT            Hash (SHA) of specific commit to lint.
+  --commits TEXT           The range of commits (refspec or comma-separated
+                           hashes) to lint. [default: HEAD]
   -e, --extra-path PATH    Path to a directory or python module with extra
                            user-defined rules
   --ignore TEXT            Ignore rules (comma-separated by id or name).
@@ -147,10 +152,11 @@ Options:
                            server.
   --staged                 Read staged commit meta-info from the local
                            repository.
-  -v, --verbose            Verbosity, more v's for more verbose output (e.g.:
-                           -v, -vv, -vvv). [default: -vvv]
-  -s, --silent             Silent mode (no output). Takes precedence over -v,
-                           -vv, -vvv.
+  --fail-without-commits   Hard fail when the target commit range is empty.
+  -v, --verbose            Verbosity, more v's for more verbose output
+                           (e.g.: -v, -vv, -vvv). [default: -vvv]
+  -s, --silent             Silent mode (no output).
+                           Takes precedence over -v, -vv, -vvv.
   -d, --debug              Enable debugging output.
   --version                Show the version and exit.
   --help                   Show this message and exit.
@@ -159,6 +165,7 @@ Commands:
   generate-config  Generates a sample gitlint config file.
   install-hook     Install gitlint as a git commit-msg hook.
   lint             Lints a git repository [default command]
+  run-hook         Runs the gitlint commit-msg hook.
   uninstall-hook   Uninstall gitlint commit-msg hook.
 
   When no COMMAND is specified, gitlint defaults to 'gitlint lint'.
@@ -246,23 +253,31 @@ git log -1 --pretty=%B 62c0519 | gitlint
 Note that gitlint requires that you specify `--pretty=%B` (=only print the log message, not the metadata),
 future versions of gitlint might fix this and not require the `--pretty` argument.
 
-## Linting a range of commits
+## Linting specific commits
 
-_Introduced in gitlint v0.9.0 (experimental in v0.8.0)_
+Gitlint allows users to lint a specific commit:
+```sh
+gitlint --commit 019cf40580a471a3958d3c346aa8bfd265fe5e16
+gitlint --commit 019cf40 # short SHAs work too
+```
 
-Gitlint allows users to lint a number of commits at once like so:
+You can also lint multiple commits at once like so:
 
 ```sh
 # Lint a specific commit range:
 gitlint --commits "019cf40...d6bc75a"
 # You can also use git's special references:
 gitlint --commits "origin..HEAD"
-# Or specify a single specific commit in refspec format, like so:
-gitlint --commits "019cf40^...019cf40"
+
+# You can also pass multiple, comma separated commit hashes:
+gitlint --commits 019cf40,c50eb150,d6bc75a
 ```
 
 The `--commits` flag takes a **single** refspec argument or commit range. Basically, any range that is understood
 by [git rev-list](https://git-scm.com/docs/git-rev-list) as a single argument will work.
+
+Alternatively, you can pass `--commits` a comma-separated list of commit hashes (both short and full-length SHAs work).
+Gitlint will lint these in the order you passed.
 
 For cases where the `--commits` option doesn't provide the flexibility you need, you can always use a simple shell
 script to lint an arbitrary set of commits, like shown in the example below.
@@ -270,10 +285,9 @@ script to lint an arbitrary set of commits, like shown in the example below.
 ```sh
 #!/bin/sh
 
-for commit in $(git rev-list master); do
-    commit_msg=$(git log -1 --pretty=%B $commit)
-    echo "$commit"
-    echo "$commit_msg" | gitlint
+for commit in $(git rev-list my-branch); do
+    echo "Commit $commit"
+    gitlint --commit $commit
     echo "--------"
 done
 ```
@@ -285,9 +299,9 @@ done
 
 
 ## Merge, fixup, squash and revert commits
-_Introduced in gitlint v0.7.0 (merge), v0.9.0 (fixup, squash) and v0.13.0 (revert)_
+_Introduced in gitlint v0.7.0 (merge), v0.9.0 (fixup, squash), v0.13.0 (revert) and v0.18.0 (fixup=amend)_
 
-**Gitlint ignores merge, revert, fixup and squash commits by default.**
+**Gitlint ignores merge, revert, fixup, and squash commits by default.**
 
 For merge and revert commits, the rationale for ignoring them is
 that most users keep git's default messages for these commits (i.e *Merge/Revert "[original commit message]"*).
@@ -297,28 +311,26 @@ For example, a common case is that *"Merge:"* being auto-prepended triggers a
 [title-max-length](rules.md#t1-title-max-length) violation. Most users don't want this, so we disable linting
 on Merge and Revert commits by default.
 
-For [squash](https://git-scm.com/docs/git-commit#git-commit---squashltcommitgt) and [fixup](https://git-scm.com/docs/git-commit#git-commit---fixupltcommitgt) commits, the rationale is that these are temporary
+For [squash](https://git-scm.com/docs/git-commit#git-commit---squashltcommitgt) and [fixup](https://git-scm.com/docs/git-commit#git-commit---fixupltcommitgt) (including [fixup=amend](https://git-scm.com/docs/git-commit#Documentation/git-commit.txt---fixupamendrewordltcommitgt)) commits, the rationale is that these are temporary
 commits that will be squashed into a different commit, and hence the commit messages for these commits are very
-short-lived and not intended to make it into the final commit history. In addition, by prepending *"fixup!"* or
-*"squash!"* to your commit message, certain gitlint rules might be violated
+short-lived and not intended to make it into the final commit history. In addition, by prepending *"fixup!"*,
+*"amend!"* or *"squash!"* to your commit message, certain gitlint rules might be violated
 (e.g. [title-max-length](rules.md#t1-title-max-length)) which is often undesirable.
 
 In case you *do* want to lint these commit messages, you can disable this behavior by setting the
-general `ignore-merge-commits`, `ignore-revert-commits`,  `ignore-fixup-commits` or
+general `ignore-merge-commits`, `ignore-revert-commits`,  `ignore-fixup-commits`, `ignore-fixup-amend-commits` or
 `ignore-squash-commits` option to `false`
 [using one of the various ways to configure gitlint](configuration.md).
 
 ## Ignoring commits
-_Introduced in gitlint v0.10.0_
 
 You can configure gitlint to ignore specific commits or parts of a commit.
 
-One way to do this, is to by [adding a gitline-ignore line to your commit message](configuration.md#commit-specific-config).
+One way to do this, is by [adding a gitlint-ignore line to your commit message](configuration.md#commit-specific-config).
 
 If you have a case where you want to ignore a certain type of commits all-together, you can
 use gitlint's *ignore* rules.
-Here's an example gitlint file that configures gitlint to ignore rules `title-max-length` and `body-min-length`
-for all commits with a title starting with *"Release"*.
+Here's a few examples snippets from a `.gitlint` file:
 
 ```ini
 [ignore-by-title]
@@ -331,6 +343,11 @@ ignore=title-max-length,body-min-length
 [ignore-by-body]
 # Match commits message bodies that have a line that contains 'release'
 regex=(.*)release(.*)
+ignore=all
+
+[ignore-by-author-name]
+# Match commits by author name (e.g. ignore all rules when a commit is made by dependabot)
+regex=dependabot
 ignore=all
 ```
 
@@ -425,8 +442,8 @@ of violations counted by the exit code is 252. Note that gitlint does not have a
 it can detect, it will just always return with exit code 252 when the number of violations is greater than or equal
 to 252.
 
-Exit Code  | Description
------------|------------------------------------------------------------
-253        | Wrong invocation of the `gitlint` command.
-254        | Something went wrong when invoking git.
-255        | Invalid gitlint configuration
+| Exit Code | Description                                |
+| --------- | ------------------------------------------ |
+| 253       | Wrong invocation of the `gitlint` command. |
+| 254       | Something went wrong when invoking git.    |
+| 255       | Invalid gitlint configuration              |

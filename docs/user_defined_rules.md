@@ -192,6 +192,7 @@ commit.date                    | datetime       | Python `datetime` object repre
 commit.is_merge_commit         | boolean        | Boolean indicating whether the commit is a merge commit or not.
 commit.is_revert_commit        | boolean        | Boolean indicating whether the commit is a revert commit or not.
 commit.is_fixup_commit         | boolean        | Boolean indicating whether the commit is a fixup commit or not.
+commit.is_fixup_amend_commit   | boolean        | Boolean indicating whether the commit is a (fixup) amend commit or not.
 commit.is_squash_commit        | boolean        | Boolean indicating whether the commit is a squash commit or not.
 commit.parents                 | string[]       | List of parent commit `sha`s (only for merge commits).
 commit.changed_files           | string[]       | List of files changed in the commit (relative paths).
@@ -374,7 +375,7 @@ class ReleaseConfigurationRule(ConfigurationRule):
 ```
 
 For all available properties and methods on the `config` object, have a look at the
-[LintConfig class](https://github.com/jorisroovers/gitlint/blob/main/gitlint/config.py). Please do not use any
+[LintConfig class](https://github.com/jorisroovers/gitlint/blob/main/gitlint-core/gitlint/config.py). Please do not use any
 properties or methods starting with an underscore, as those are subject to change.
 
 
@@ -385,7 +386,7 @@ As long as you stick with simple rules that are similar to the sample user-defin
 should be able to discover and execute them. While clearly you can run any python code you want in your rules,
 you might run into some issues if you don't follow the conventions that gitlint requires.
 
-While the [rule finding source-code](https://github.com/jorisroovers/gitlint/blob/main/gitlint/rule_finder.py) is the
+While the [rule finding source-code](https://github.com/jorisroovers/gitlint/blob/main/gitlint-core/gitlint/rule_finder.py) is the
 ultimate source of truth, here are some of the requirements that gitlint enforces.
 
 ### Rule class requirements

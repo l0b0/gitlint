@@ -14,10 +14,12 @@ contrib: []
 ignore: 
 ignore-merge-commits: True
 ignore-fixup-commits: True
+ignore-fixup-amend-commits: True
 ignore-squash-commits: True
 ignore-revert-commits: True
 ignore-stdin: False
 staged: True
+fail-without-commits: False
 verbosity: 3
 debug: True
 target: {target}
@@ -29,6 +31,9 @@ target: {target}
      ignore=all
      regex=None
   I3: ignore-body-lines
+     regex=None
+  I4: ignore-by-author-name
+     ignore=all
      regex=None
   T1: title-max-length
      line-length=72
@@ -75,9 +80,10 @@ Author: gitlint-test-user <gitlint@test.com>
 Date:   {staged_date}
 is-merge-commit:  False
 is-fixup-commit:  False
+is-fixup-amend-commit: False
 is-squash-commit: False
 is-revert-commit: False
-Branches: ['master']
+Branches: ['main']
 Changed Files: {changed_files}
 -----------------------
 1: T3 Title has trailing punctuation (.): "WIP: from fïle test."

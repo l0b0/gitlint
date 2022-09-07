@@ -6,15 +6,15 @@ help(){
     echo "Run gitlint's test suite(s) or some convience commands"
     echo "  -h, --help               Show this help output"
     echo "  -c, --clean              Clean the project of temporary files"
-    echo "  -p, --pep8               Run pep8 checks"
+    echo "  -f, --format             Run format checks"
     echo "  -l, --lint               Run pylint checks"
     echo "  -g, --git                Run gitlint checks"
     echo "  -i, --integration        Run integration tests"
     echo "  -b, --build              Run build tests"
-    echo "  -a, --all                Run all tests and checks (unit, integration, pep8, git)"
+    echo "  -a, --all                Run all tests and checks (unit, integration, formatting, git)"
     echo "  -e, --envs [ENV1],[ENV2] Run tests against specified python environments"
     echo "                           (envs: 36,37,38,39,pypy37)."
-    echo "                           Also works for integration, pep8 and lint tests."
+    echo "                           Also works for integration, formatting and lint tests."
     echo "  -C, --container          Run the specified command in the container for the --envs specified"
     echo "  --all-env                Run all tests against all python environments"
     echo "  --install                Install virtualenvs for the --envs specified"
@@ -56,7 +56,7 @@ assert_root(){
     fi
 }
 
-# Utility method that prints SUCCESS if a test was succesful, or FAIL together with the test output
+# Utility method that prints SUCCESS if a test was successful, or FAIL together with the test output
 handle_test_result(){
     EXIT_CODE=$1
     RESULT="$2"
@@ -74,11 +74,11 @@ handle_test_result(){
     echo -e "${NO_COLOR}"
 }
 
-run_pep8_check(){
-    # FLAKE 8
-    target=${testargs:-"gitlint qa examples"}
-    echo -ne "Running flake8..."
-    RESULT=$(flake8 $target)
+run_formatting_check(){
+    # BLACK
+    target=${testargs:-"."}
+    echo -ne "Running black --check..."
+    RESULT=$(black --check --diff $target)
     local exit_code=$?
     handle_test_result $exit_code "$RESULT"
     return $exit_code
@@ -88,9 +88,8 @@ run_unit_tests(){
     clean
     # py.test -s  => print standard output (i.e. show print statement output)
     #         -rw => print warnings
-    OMIT="*pypy*,*venv*,*virtualenv*,*gitlint/tests/*"
-    target=${testargs:-"gitlint"}
-    coverage run --omit=$OMIT -m pytest -rw -s $target
+    target=${testargs:-"gitlint-core"}
+    coverage run -m pytest -rw -s $target
     TEST_RESULT=$?
     if [ $include_coverage -eq 1 ]; then
         COVERAGE_REPORT=$(coverage report -m)
@@ -130,7 +129,7 @@ run_git_check(){
 
 run_lint_check(){
     echo -ne "Running pylint...${RED}"
-    target=${testargs:-"gitlint qa"}
+    target=${testargs:-"gitlint-core/gitlint qa"}
     RESULT=$(pylint $target --rcfile=".pylintrc" -r n)
     local exit_code=$?
     handle_test_result $exit_code "$RESULT"
@@ -150,14 +149,14 @@ run_build_test(){
 
     # Update the version to include a timestamp
     echo -n "Writing new version to file..."
-    version_file="$temp_dir/gitlint/__init__.py"
+    version_file="$temp_dir/gitlint-core/gitlint/__init__.py"
     version_str="$(cat $version_file)"
     version_str="${version_str:0:${#version_str}-1}-$datestr\""
     echo "$version_str" > $version_file
     echo -e "${GREEN}DONE${NO_COLOR}"
     # Attempt to build the package
     echo "Building package ..."
-    pushd "$temp_dir"
+    pushd "$temp_dir/gitlint-core"
     # Copy stdout file descriptor so we can both print output to stdout as well as capture it in a variable
     # https://stackoverflow.com/questions/12451278/bash-capture-stdout-to-a-variable-but-still-display-it-in-the-console
     exec 5>&1
@@ -184,7 +183,7 @@ run_stats(){
     echo "*** Docs ***"
     echo "    Markdown: $(cat docs/*.md | wc -l | tr -d " ") lines"
     echo "*** Tests ***"
-    nr_unit_tests=$(py.test gitlint/ --collect-only | grep TestCaseFunction | wc -l)
+    nr_unit_tests=$(py.test gitlint-core/ --collect-only | grep TestCaseFunction | wc -l)
     nr_integration_tests=$(py.test qa/ --collect-only | grep TestCaseFunction | wc -l)
     echo "    Unit Tests: ${nr_unit_tests//[[:space:]]/}"
     echo "    Integration Tests: ${nr_integration_tests//[[:space:]]/}"
@@ -213,11 +212,9 @@ run_stats(){
 
 clean(){
     echo -n "Cleaning the *.pyc, site/, build/, dist/ and all __pycache__ directories..."
-    find gitlint -type d  -name "__pycache__" -exec rm -rf {} \; 2> /dev/null
-    find qa -type d  -name "__pycache__" -exec rm -rf {} \; 2> /dev/null
-    find gitlint -iname *.pyc -exec rm -rf {} \; 2> /dev/null
-    find qa -iname *.pyc -exec rm -rf {} \; 2> /dev/null
-    rm -rf "site" "dist" "build"
+    find gitlint-core qa -type d -name "__pycache__" -exec rm -rf {} \; 2> /dev/null
+    find gitlint-core qa -iname "*.pyc" -exec rm -rf {} \; 2> /dev/null
+    rm -rf "site" "dist" "build" "gitlint-core/dist" "gitlint-core/build"
     echo -e "${GREEN}DONE${NO_COLOR}"
 }
 
@@ -233,7 +230,7 @@ run_all(){
     run_build_test
     exit_code=$((exit_code + $?))
     subtitle "# STYLE CHECKS ($(python --version 2>&1), $(which python)) #"
-    run_pep8_check
+    run_formatting_check
     exit_code=$((exit_code + $?))
     run_lint_check
     exit_code=$((exit_code + $?))
@@ -404,7 +401,7 @@ run_in_container(){
 
 
 # default behavior
-just_pep8=0
+just_formatting=0
 just_lint=0
 just_git=0
 just_integration_tests=0
@@ -427,7 +424,7 @@ while [ "$#" -gt 0 ]; do
     case "$1" in
         -h|--help) shift; help;;
         -c|--clean) shift; just_clean=1;;
-        -p|--pep8) shift; just_pep8=1;;
+        -f|--format) shift; just_formatting=1;;
         -l|--lint) shift; just_lint=1;;
         -g|--git) shift; just_git=1;;
         -b|--build) shift; just_build_tests=1;;
@@ -468,9 +465,9 @@ for environment in $envs; do
 
     if [ $container_enabled -eq 1 ]; then
         run_in_container "$environment" "$original_envs" "$original_args"
-    elif [ $just_pep8 -eq 1 ]; then
+    elif [ $just_formatting -eq 1 ]; then
         switch_env "$environment"
-        run_pep8_check
+        run_formatting_check
     elif [ $just_stats -eq 1 ]; then
         switch_env "$environment"
         run_stats

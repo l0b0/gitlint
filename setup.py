@@ -1,12 +1,6 @@
 #!/usr/bin/env python
 from __future__ import print_function
-from setuptools import setup, find_packages
-import io
-import re
-import os
-import platform
-import sys
-
+from setuptools import setup
 
 description = "Git commit message linter written in python, checks your commit messages for style."
 long_description = """
@@ -29,16 +23,11 @@ Source code on `github.com/jorisroovers/gitlint`_.
 """
 
 
-# shamelessly stolen from mkdocs' setup.py: https://github.com/mkdocs/mkdocs/blob/master/setup.py
-def get_version(package):
-    """Return package version as listed in `__version__` in `init.py`."""
-    init_py = io.open(os.path.join(package, '__init__.py'), encoding="UTF-8").read()
-    return re.search("__version__ = ['\"]([^'\"]+)['\"]", init_py).group(1)
-
+version = "0.18.0dev"
 
 setup(
     name="gitlint",
-    version=get_version("gitlint"),
+    version=version,
     description=description,
     long_description=long_description,
     classifiers=[
@@ -49,55 +38,26 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: Implementation :: CPython",
         "Programming Language :: Python :: Implementation :: PyPy",
         "Environment :: Console",
         "Intended Audience :: Developers",
         "Topic :: Software Development :: Quality Assurance",
         "Topic :: Software Development :: Testing",
-        "License :: OSI Approved :: MIT License"
+        "License :: OSI Approved :: MIT License",
     ],
     python_requires=">=3.6",
     install_requires=[
-        'Click==7.1.2',
-        'arrow==1.0.3',
+        "gitlint-core[trusted-deps]==" + version,
     ],
-    extras_require={
-        ':sys_platform != "win32"': [
-            'sh==1.14.1',
-        ],
-    },
-    keywords='gitlint git lint',
-    author='Joris Roovers',
-    url='https://jorisroovers.github.io/gitlint',
+    keywords="gitlint git lint",
+    author="Joris Roovers",
+    url="https://jorisroovers.github.io/gitlint",
     project_urls={
-        'Documentation': 'https://jorisroovers.github.io/gitlint',
-        'Source': 'https://github.com/jorisroovers/gitlint',
+        "Documentation": "https://jorisroovers.github.io/gitlint",
+        "Source": "https://github.com/jorisroovers/gitlint",
+        "Changelog": "https://github.com/jorisroovers/gitlint/blob/main/CHANGELOG.md",
     },
-    license='MIT',
-    package_data={
-        'gitlint': ['files/*']
-    },
-    packages=find_packages(exclude=["examples"]),
-    entry_points={
-        "console_scripts": [
-            "gitlint = gitlint.cli:cli",
-        ],
-    },
+    license="MIT",
 )
-
-# Print a red deprecation warning for python < 3.6 users
-if sys.version_info[:2] < (3, 6):
-    msg = "\033[31mDEPRECATION: You're using a python version that has reached end-of-life. " + \
-          "Gitlint does not support Python < 3.6" + \
-          "Please upgrade your Python to 3.6 or above.\033[0m"
-    print(msg)
-
-# Print a warning message for Windows users
-PLATFORM_IS_WINDOWS = "windows" in platform.system().lower()
-if PLATFORM_IS_WINDOWS:
-    msg = "\n\n\n\n\n****************\n" + \
-          "WARNING: Gitlint support for Windows is still experimental and there are some known issues: " + \
-          "https://github.com/jorisroovers/gitlint/issues?q=is%3Aissue+is%3Aopen+label%3Awindows " + \
-          "\n*******************"
-    print(msg)

@@ -14,10 +14,12 @@ contrib: ['CC1', 'CT1']
 ignore: T1,T2
 ignore-merge-commits: True
 ignore-fixup-commits: True
+ignore-fixup-amend-commits: True
 ignore-squash-commits: True
 ignore-revert-commits: True
 ignore-stdin: True
 staged: False
+fail-without-commits: True
 verbosity: 2
 debug: True
 target: {target}
@@ -29,6 +31,9 @@ target: {target}
      ignore=all
      regex=None
   I3: ignore-body-lines
+     regex=None
+  I4: ignore-by-author-name
+     ignore=all
      regex=None
   T1: title-max-length
      line-length=72
@@ -80,9 +85,10 @@ Author: gitlint-test-user <gitlint@test.com>
 Date:   {commit_date}
 is-merge-commit:  False
 is-fixup-commit:  False
+is-fixup-amend-commit: False
 is-squash-commit: False
 is-revert-commit: False
-Branches: ['master']
+Branches: ['main']
 Changed Files: {changed_files}
 -----------------------
 1: CC1 Body does not contain a 'Signed-off-by' line

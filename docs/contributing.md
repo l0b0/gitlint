@@ -13,7 +13,7 @@ that's open to a lot of change and input.
 
 When contributing code, please consider all the parts that are typically required:
 
-- [Unit tests](https://github.com/jorisroovers/gitlint/tree/main/gitlint/tests) (automatically
+- [Unit tests](https://github.com/jorisroovers/gitlint/tree/main/gitlint-core/gitlint/tests) (automatically
   [enforced by CI](https://github.com/jorisroovers/gitlint/actions)). Please consider writing
   new ones for your functionality, not only updating existing ones to make the build pass.
 - [Integration tests](https://github.com/jorisroovers/gitlint/tree/main/qa) (also automatically
@@ -44,7 +44,9 @@ vagrant ssh
 Or you can choose to use your local environment:
 
 ```sh
-virtualenv .venv
+python -m venv .venv
+. .venv/bin/activate
+pip install --upgrade pip
 pip install -r requirements.txt -r test-requirements.txt -r doc-requirements.txt
 python setup.py develop
 ```
@@ -57,11 +59,11 @@ To run tests:
 ./run_tests.sh --collect-only --no-coverage  # Only collect, don't run unit tests
 ./run_tests.sh --integration         # Run integration tests (requires that you have gitlint installed)
 ./run_tests.sh --build               # Run build tests (=build python package)
-./run_tests.sh --pep8                # pep8 checks
+./run_tests.sh --format              # format checks
 ./run_tests.sh --stats               # print some code stats
 ./run_tests.sh --git                 # inception: run gitlint against itself
 ./run_tests.sh --lint                # run pylint checks
-./run_tests.sh --all                 # Run unit, integration, pep8 and gitlint checks
+./run_tests.sh --all                 # Run unit, integration, format and gitlint checks
 ```
 
 The `Vagrantfile` comes with `virtualenv`s for python 3.6, 3.7, 3.8, 3.9 and pypy3.6.
@@ -69,7 +71,7 @@ You can easily run tests against specific python environments by using the follo
 ```sh
 ./run_tests.sh --envs 36               # Run the unit tests against Python 3.6
 ./run_tests.sh --envs 36,37,pypy36     # Run the unit tests against Python 3.6, Python 3.7 and Pypy3.6
-./run_tests.sh --envs 36,37 --pep8     # Run pep8 checks against Python 3.6 and Python 3.7 (also works for --git, --integration, --pep8, --stats and --lint.
+./run_tests.sh --envs 36,37 --format   # Run format checks against Python 3.6 and Python 3.7 (also works for --git, --integration, --format, --stats and --lint.
 ./run_tests.sh --envs all --all        # Run all tests against all environments
 ./run_tests.sh --all-env --all         # Idem: Run all tests against all environments
 ```
@@ -116,8 +118,8 @@ Then, we suggest taking the following approach to add a Contrib rule:
 
 1. **Write your rule as a [user-defined rule](../user_defined_rules)**. In terms of code, Contrib rules are identical to
    user-defined rules, they just happen to have their code sit within the gitlint codebase itself.
-2. **Add your user-defined rule to gitlint**. You should put your file(s) in the [gitlint/contrib/rules](https://github.com/jorisroovers/gitlint/tree/main/gitlint/contrib/rules) directory.
-3. **Write unit tests**. The gitlint codebase contains [Contrib rule test files you can copy and modify](https://github.com/jorisroovers/gitlint/tree/main/gitlint/tests/contrib/rules).
+2. **Add your user-defined rule to gitlint**. You should put your file(s) in the [gitlint/contrib/rules](https://github.com/jorisroovers/gitlint/tree/main/gitlint-core/gitlint/contrib/rules) directory.
+3. **Write unit tests**. The gitlint codebase contains [Contrib rule test files you can copy and modify](https://github.com/jorisroovers/gitlint/tree/main/gitlint-core/gitlint/tests/contrib/rules).
 4. **Write documentation**. In particular, you should update the [gitlint/docs/contrib_rules.md](https://github.com/jorisroovers/gitlint/blob/main/docs/contrib_rules.md) file with details on your Contrib rule.
 5. **Create a Pull Request**: code review typically requires a bit of back and forth. Thanks for your contribution!
 

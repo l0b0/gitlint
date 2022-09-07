@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from gitlint.rules import ConfigurationRule
 from gitlint.options import IntOption
 
@@ -36,7 +34,7 @@ class ReleaseConfigurationRule(ConfigurationRule):
     id = "UCR1"
 
     # A rule MAY have an option_spec if its behavior should be configurable.
-    options_spec = [IntOption('custom-verbosity', 2, "Gitlint verbosity for release commits")]
+    options_spec = [IntOption("custom-verbosity", 2, "Gitlint verbosity for release commits")]
 
     def apply(self, config, commit):
         self.log.debug("ReleaseConfigurationRule: This will be visible when running `gitlint --debug`")
@@ -44,7 +42,6 @@ class ReleaseConfigurationRule(ConfigurationRule):
         # If the commit title starts with 'Release', we want to modify
         # how all subsequent rules interpret that commit
         if commit.message.title.startswith("Release"):
-
             # If your Release commit messages are auto-generated, the
             # body might contain trailing whitespace. Let's ignore that
             config.ignore.append("body-trailing-whitespace")
@@ -60,7 +57,7 @@ class ReleaseConfigurationRule(ConfigurationRule):
             # config.set_general_option(<general-option>, <value>)
             config.set_general_option("verbosity", 2)
             # Wwe can also use custom options to make this configurable
-            config.set_general_option("verbosity", self.options['custom-verbosity'].value)
+            config.set_general_option("verbosity", self.options["custom-verbosity"].value)
 
             # Strip any lines starting with $ from the commit message
             # (this only affects how gitlint sees your commit message, it does
